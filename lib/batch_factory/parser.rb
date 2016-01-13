@@ -35,21 +35,15 @@ module BatchFactory
     def parse_data_rows
       @row_hashes = []
 
-      first_row_offset = user_heading_keys ? 0 : 1
-
-      rows_range = ((worksheet.first_row+first_row_offset)..worksheet.last_row)
-      rows_range.each do |idx|
-        row = worksheet.row(idx)
+      rows_range.each do |row_idx|
+        @row = @worksheet.row(row_idx)
         hash = HashWithIndifferentAccess.new
-
-        for cell_index in @column_bounds
-          if key = @heading_keys[cell_index] and
-            value = row[cell_index]
-
+        @column_bounds.each do |cell_idx|
+          value = cell_value(row_idx, cell_idx)
+          if key = @heading_keys[cell_idx]
             hash[key] = value if value.present?
           end
         end
-
         @row_hashes << hash unless hash.empty?
       end
     end
@@ -59,6 +53,29 @@ module BatchFactory
         @heading_keys,
         @row_hashes
       )
+    end
+
+    private
+
+    def numeric_cell?(row_idx, cell_idx)
+      @worksheet.excelx_type(row_idx, cell_idx) == [:numeric_or_formula, 'General']
+    end
+
+    def first_row_offset
+      @user_heading_keys ? 0 : 1
+    end
+
+    def rows_range
+      (@worksheet.first_row + first_row_offset)..@worksheet.last_row
+    end
+
+    def cell_value(row_idx, cell_idx)
+      roo_cell_idx = cell_idx + 1 # cells indexes in worksheet row start with 1
+      if @worksheet.xlsx? and numeric_cell?(row_idx, roo_cell_idx)
+        @worksheet.excelx_value(row_idx, roo_cell_idx)
+      else
+        @row[cell_idx]
+      end
     end
 
   end

@@ -29,6 +29,10 @@ class SpreadsheetDocument
     end
   end
 
+  def xlsx?
+    @filetype == 'xlsx'
+  end
+
   private
 
   def detect_filetype(file_name)
